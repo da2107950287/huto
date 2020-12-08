@@ -13,14 +13,14 @@ module.exports = {
     },
 
   },
-  // devServer: {
-  //   proxy: {
-  //     "/treasurebsg": {
-  //       target: "http://47.111.244.224:81/treasurebsg",
-  //       changeOrigin: true,
-  //       pathRewrite: { '^/treasurebsg': '' }
-  //     },
+  devServer: {
+    proxy: {
+      "/room": {
+        target: "http://47.111.244.224:8080/room",
+        changeOrigin: true,
+        pathRewrite: { '^/room': '' }
+      },
       
-  //   }
-  // }
+    }
+  }
 }

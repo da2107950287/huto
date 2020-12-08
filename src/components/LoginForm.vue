@@ -5,14 +5,15 @@
     <input class="input" v-model="email" type="text" placeholder="Email">
     <div class="btns">
       <div class="cancel btn" @click="handleCancel">Cancel</div>
-      <div class="ok btn" @click="handleLogin">OK</div>
+      <div class="ok btn" @click="sitDown">OK</div>
     </div>
   </div>
 </template>
 <script>
-  import {isEmail} from "assets/js/utils.js"
-  export default {
+  import { isEmail } from "assets/js/utils.js"
 
+  export default {
+  
     data() {
       return {
         name: '',
@@ -23,12 +24,13 @@
       handleCancel() {
         this.$emit('handleCancel')
       },
-      handleLogin() {
+      sitDown() {
         var reg = /^[A-Za-z0-9\u4e00-\u9fa5]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/
         console.log(reg.test(this.email))
-        if (this.name !== ''&& this.email !==''){
-          if(!reg.test(this.email)){
-            console.log("youxinag shurucuowu ")
+        if (this.name !== '' && this.email !== '') {
+          if (reg.test(this.email)) {
+            
+            this.$emit('sitDown', { name: this.name, emial: this.email })
           }
         }
       },
@@ -55,14 +57,14 @@
 
     .input {
       @include wh(280px, 40px);
-      @include sc(18px,#9B9B9B);
+      @include sc(18px, #9B9B9B);
       padding-left: 13px;
       margin-top: 21px;
       background: #E7E7E7;
       border-radius: 4px;
       outline: none;
 
-font-family: PingFangSC-Regular, PingFang SC;
+      font-family: PingFangSC-Regular, PingFang SC;
 
     }
 

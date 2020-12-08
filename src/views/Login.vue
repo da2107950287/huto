@@ -5,33 +5,15 @@
       <div class="logo">You Say I Guess</div>
       <div v-if="isShow==1">
         <div class="input-box">
-          <input type="text" v-model="roomId" placeholder="Room ID" class="input">
+          <input type="text" v-model="rNum" placeholder="Room ID" class="input">
           <div class="enter common" @click="enterRoom">Enter</div>
         </div>
-        <div class="new-room common" @click="isShow=2">Create a new room</div>
+        <router-link tag="div" class="new-room common" :to="{path:'/createRoom',query:{rNum:rNum}}">Create a new room
+        </router-link>
       </div>
-      <div class="create-room-box" v-else-if="isShow==2">
-        <div class="box">
-          <div>Select the number of the player</div>
-          <select v-model="num">
-            <option v-for="item in [1,2,3,4,5,6]" :value="item">{{item}}</option>
-          </select>
-        </div>
-        <div class="box level-box">
-          <div>Choose the level of the game</div>
-          <select v-model="level">
-            <option v-for="item in ['easy','medium','hard']" :value="item">{{item}}</option>
-          </select>
-        </div>
-        <div class="btns">
-          <div class="btn cancel" @click="isShow=1">Cancel</div>
-          <div class="btn ok" >OK</div>
-        </div>
-      </div>
-      <div class="error" v-else-if="isShow==3">
+      <div class="error" v-else-if="isShow==2">
         <div class="title">Error</div>
-        <div v-if="isOver" class="dec"  style="margin-bottom: 50px;">The room ID is error. Please check it.</div>
-        <div  v-else  class="dec" style="margin-bottom: 28px;">The game has been over, You can create a new game room</div>
+        <div class="dec" style="margin-bottom: 50px;">{{message}}</div>
         <div class="ok" @click="isShow=1">OK</div>
       </div>
     </div>
@@ -42,27 +24,39 @@
     data() {
       return {
         isShow: 1,
-        num: null,
-        level: null,
-        roomId:null,
-        isOver:null,
+        rNum: '',//房间号
+        roomId: '',//房间ID
+        message: '',//错误提示消息
+        level:'',//游戏等级
       }
     },
+    mounted() {
+
+    },
     methods: {
-      enterRoom(){
-        if(this.roomId==1 ){
-          
-          this.$router.push('/about')
-          
-        }else if(this.roomId==2){
-          this.isShow=3;
-          this.isOver=true
-        }else{
-          this.isShow=3;
-          this.isOver=false
+
+
+      enterRoom() {
+        if (this.rNum) {
+          this.$http('/showRoomList', {
+            rlNumber: this.rNum
+          }).then(res => {
+            if (res.code == 200) {
+              this.roomId = res.data.rlId;
+              this.rNum=res.data.rlNumber;
+              this.level=res.data.levels;
+              console.log(999)
+              this.$router.push({ path: '/index', query: { roomId: this.roomId,rNum: this.rNum,level:this.level} })
+            } else if (res.code == 500) {
+              this.message = res.msg;
+              this.isShow = 2;
+            }
+
+          })
         }
+
       },
-     
+
     }
   }
 </script>
@@ -107,14 +101,13 @@
 
         .input {
           @include wh(260px, 46px);
-          @include sc(24px, #97999A)
-          text-indent: 1rem;
+          @include sc(24px, #97999A) text-indent: 1rem;
           outline: none;
           background: $fc;
           border-radius: 4px;
           border: 2px solid #FA6400;
 
-font-family: PingFangSC-Regular, PingFang SC;
+          font-family: PingFangSC-Regular, PingFang SC;
 
         }
 
@@ -191,9 +184,9 @@ font-family: PingFangSC-Regular, PingFang SC;
 
     .error {
       @include wh(380px, 210px);
-     @include fj();
-     flex-direction: column;
-     align-items: center;
+      @include fj();
+      flex-direction: column;
+      align-items: center;
       margin-top: 137px;
       padding: 20px 48px 24px;
       box-shadow: 0px 0px 8px 0px rgba(176, 176, 176, 0.3);
@@ -210,7 +203,7 @@ font-family: PingFangSC-Regular, PingFang SC;
 
       .dec {
         text-align: center;
-    margin-top: 24px;
+        margin-top: 24px;
         font-size: 16px;
         font-family: PingFangSC-Medium, PingFang SC;
         font-weight: 500;
@@ -220,7 +213,7 @@ font-family: PingFangSC-Regular, PingFang SC;
 
       .ok {
         @include wh(150px, 30px);
-      
+
         text-align: center;
         line-height: 30px;
         color: $fc;

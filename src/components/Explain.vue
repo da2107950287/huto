@@ -1,12 +1,13 @@
 <template>
   <div class="explain">
     <div class="title">Low to play the game "You Say I Guess"</div>
-    <p class="content">How to play the game You Say I Guess How to play the game" You Say I Guess How to play the game"You Say I Guess"How to play the game"You Say I Guess</p>
+    <p v-html="playDescribe" class="content"></p>
     <div class="ok" @click="handleOk">OK</div>
   </div>
 </template>
 <script>
   export default{
+    props:["playDescribe"],
     methods:{
       handleOk(){
         this.$emit('handleOk')

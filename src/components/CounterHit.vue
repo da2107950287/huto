@@ -2,20 +2,40 @@
   <div class="counter">
     <div class="title">
       <span>Counter hit counts</span>
-      <span>+3</span>
+      <span>+{{rightCount}}</span>
     </div>
     <div class="content">
-      <div>
-        <span>2 Andrew lon</span>
-       <span class="iconfont icon-zhengque"></span>
+      <div v-for="(item,index) in counterHit">
+        <span>{{item.positions}} {{item.name}}</span>
+       <span v-if="item.state==1" class="iconfont icon-zhengque"></span>
+       <span v-else class="iconfont icon-cuowu"></span>
+
       </div>
-      <div>
+      <!-- <div>
         <span>2 Andrew lon</span>
-       <span class="iconfont icon-cuowu"></span>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>
+<script>
+  export default{
+    data(){
+      return{
+rightCount:''
+      }
+    },
+    props:["counterHit"],
+    watch:{
+      counterHit(){
+      let arr=  this.counterHit.filter(item=>{
+          return item.state==1;
+        })
+        this.rightCount=arr.length;
+      }
+      
+    }
+  }
+</script>
 <style lang="scss" scoped>
   @import '~assets/css/mixin.scss';
 

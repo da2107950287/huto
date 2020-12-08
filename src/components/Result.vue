@@ -11,24 +11,29 @@
         <th>Hit counts</th>
         <th>Counter hit counts</th>
       </tr>
-      <tr class="tr" v-for="item in [1,2,3,4,5]">
+      <tr class="tr" v-for="(index,item) in result">
+        <td>{{item.positions}}</td>
+        <td>{{item.nickname}}</td>
+        <td>{{item.number1}}</td>
+        <td>{{item.number2}}</td>
+        <td>{{item.number3}}</td>
+      </tr>
+      <!-- <tr class="tr active">
         <td>1</td>
         <td>Name</td>
         <td>12</td>
         <td>22</td>
         <td>43</td>
-      </tr>
-      <tr class="tr active">
-        <td>1</td>
-        <td>Name</td>
-        <td>12</td>
-        <td>22</td>
-        <td>43</td>
-      </tr>
+      </tr> -->
     </table>
-    <div class="exit">Exit</div>
+    <!-- <div class="exit">Exit</div> -->
   </div>
 </template>
+<script>
+  export default{
+    props:["result"],
+  }
+</script>
 <style lang="scss" scoped>
   @import '~assets/css/mixin.scss';
 
