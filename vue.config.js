@@ -1,14 +1,13 @@
 module.exports = {
-  publicPath: './',
+  publicPath: process.env.NODE_ENV === 'production' ? './' : '/',
   productionSourceMap: false,
+  outputDir: 'huto',
   configureWebpack: {
     resolve: {
       alias: {
         'components': '@/components',
         'assets': '@/assets',
-        'utils':'@/utils',
         'views': '@/views',
-        'vue$': 'vue/dist/vue.esm.js' 
       }
     },
 

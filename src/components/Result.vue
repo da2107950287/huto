@@ -1,8 +1,9 @@
 <template>
   <div class="result">
 
-    <div class="title">Result（2/5）</div>
-    <!-- <div class="title">Game Over</div> -->
+    <!-- <div v-if="frequency!=currentfrequency && !abnormalExit" class="title">Result（{{currentfrequency}}/{{frequency}}）</div>
+    <div v-else class="title">Game Over</div> -->
+    <div class="title">Game Over</div>
     <table class="table">
       <tr class="tr">
         <th>Num</th>
@@ -11,34 +12,55 @@
         <th>Hit counts</th>
         <th>Counter hit counts</th>
       </tr>
-      <tr class="tr" v-for="(index,item) in result">
+      <tr class="tr" v-for="(item) in result" :class="{'active':item.uid==uid?true:false}">
         <td>{{item.positions}}</td>
         <td>{{item.nickname}}</td>
         <td>{{item.number1}}</td>
         <td>{{item.number2}}</td>
         <td>{{item.number3}}</td>
       </tr>
-      <!-- <tr class="tr active">
-        <td>1</td>
-        <td>Name</td>
-        <td>12</td>
-        <td>22</td>
-        <td>43</td>
-      </tr> -->
     </table>
-    <!-- <div class="exit">Exit</div> -->
+    <div class="exit pointer" @click="exit">Exit</div>
+    <!-- <div v-if="frequency==currentfrequency || abnormalExit" class="exit pointer" @click="exit">Exit</div>
+    <div v-if="frequency==currentfrequency || abnormalExit" class="iconfont icon-cuowu icon-close" @click="exit"></div>
+    <div v-if="frequency!=currentfrequency && !abnormalExit" class="iconfont icon-cuowu icon-close" @click="closeResult"></div> -->
+    
   </div>
 </template>
 <script>
   export default{
-    props:["result"],
+    props:["result","frequency","currentfrequency","uid","abnormalExit"],
+    methods:{
+      exit(){
+        this.$emit('exit')
+      },
+      closeResult(){
+        this.$emit("closeResult")
+      }
+    }
   }
 </script>
 <style lang="scss" scoped>
   @import '~assets/css/mixin.scss';
+  .pointer{
+  cursor: pointer;
+}
+.pointer:active{
+  opacity: .5;
+}
+  .icon-close {
+    color: #fff;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
 
+  .icon-close:hover {
+    opacity: .5;
+  }
   .result {
     width: 560px;
+    position: relative;
     text-align: center;
     padding: 32px 37px 13px;
     background: #FA6400;

@@ -2,7 +2,9 @@
   <div class="explain">
     <div class="title">Low to play the game "You Say I Guess"</div>
     <p v-html="playDescribe" class="content"></p>
-    <div class="ok" @click="handleOk">OK</div>
+    <div class="ok pointer" @click="handleOk">OK</div>
+    <div class="iconfont icon-cuowu icon-close" @click="handleOk"></div>
+
   </div>
 </template>
 <script>
@@ -17,8 +19,23 @@
 </script>
 <style lang="scss" scoped>
   @import '~assets/css/mixin.scss';
+.pointer{
+  cursor: pointer;
+}
+.pointer:active{
+  opacity: .5;
+}
+.icon-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
 
+  .icon-close:hover {
+    opacity: .5;
+  }
   .explain {
+    position: relative;
     width: 730px;
     background: $fc;
     box-shadow: 0px 0px 8px 0px #B0B0B0;

@@ -2,34 +2,51 @@
   <div class="share-form">
     <div class="title">Share the room URL</div>
     <div class="url-box">
-      <div class="url">Https：WWW.huto.com/abl/dofd/00234</div>
-      <div class="copy" v-clipboard:copy="url">Copy</div>
+      <div class="url">{{url}}</div>
+      <div class="copy pointer" v-clipboard:copy="url">Copy</div>
     </div>
-    <div class="ok" @click="handleOk">OK</div>
+    <div class="ok pointer" @click="handleOk">OK</div>
+    <div class="iconfont icon-cuowu icon-close" @click="handleOk"></div>
+
   </div>
 </template>
 <script>
 
   export default {
-    data(){
-      return{
-        url:window.location.href
+    data() {
+      return {
+        url: window.location.href
       }
     },
     methods: {
       handleOk() {
         this.$emit("handleOk")
       },
-     
+
     }
 
   }
 </script>
 <style lang="scss" scoped>
   @import '~assets/css/mixin.scss';
+.pointer{
+  cursor: pointer;
+}
+.pointer:active{
+  opacity: .5;
+}
+.icon-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
 
+  .icon-close:hover {
+    opacity: .5;
+  }
   .share-form {
     @include wh(600px, 260px);
+    position: relative;
     text-align: center;
     padding: 14px 43px 0;
     background: $fc;
@@ -46,8 +63,6 @@
       @include fj();
       margin-top: 41px;
       line-height: 40px;
-
-
       .url {
         @include wh(390px, 40px);
         @include sc(18px, #747474);
@@ -56,6 +71,10 @@
         background: #E7E7E7;
         border-radius: 4px;
         font-weight: 400;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
       }
 
       .copy {

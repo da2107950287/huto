@@ -42,7 +42,7 @@
     },
     mounted() {
       this.showConfig();
-      this.rNum = this.$route.query.rNum;
+
     },
     methods: {
       showConfig() {
@@ -55,28 +55,27 @@
       },
       createRoom() {
         this.$http('insertRoomList', {
-          rlNumber: this.rNum,
           levels: this.level,
           playNumber: this.number,
         }).then(res => {
           if (res.code == 200) {
-            this.$router.push({path:'/index',query: { roomId: res.data.rlId,rNum: this.rNum,level:this.level} })
+            this.$router.push({ path: '/index', query: { roomId: res.data.rlId, rNum: res.data.rlNumber, level: res.data.levels } })
           } else if (res.code == 500) {
-
             this.isShow = 2;
             this.message = res.msg;
           }
         })
-
       },
-
 
     }
   }
 </script>
 <style lang="scss" scoped>
   @import '~assets/css/mixin.scss';
-
+.ok:active,.cancel:active{
+  opacity: .5;
+  
+}
   .login {
     @include fj(flex-start);
     @include center();
@@ -141,6 +140,8 @@
             border-radius: 4px;
             cursor: pointer;
           }
+
+         
 
           .cancel {
 

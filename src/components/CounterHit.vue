@@ -7,39 +7,52 @@
     <div class="content">
       <div v-for="(item,index) in counterHit">
         <span>{{item.positions}} {{item.name}}</span>
-       <span v-if="item.state==1" class="iconfont icon-zhengque"></span>
-       <span v-else class="iconfont icon-cuowu"></span>
+        <span v-if="item.state==1" class="iconfont icon-zhengque"></span>
+        <span v-else class="iconfont icon-cuowu"></span>
 
       </div>
       <!-- <div>
         <span>2 Andrew lon</span>
       </div> -->
     </div>
+    <div class="iconfont icon-cuowu icon-close" @click="closeCounterHit"></div>
+
   </div>
 </template>
 <script>
-  export default{
-    data(){
-      return{
-rightCount:''
+  export default {
+   
+    props: ["counterHit"],
+    computed:{
+      rightCount(){
+        return this.counterHit.filter(item => {
+          return item.state == 1;
+        }).length
+        
       }
     },
-    props:["counterHit"],
-    watch:{
-      counterHit(){
-      let arr=  this.counterHit.filter(item=>{
-          return item.state==1;
-        })
-        this.rightCount=arr.length;
+    methods:{
+      closeCounterHit(){
+        this.$emit("closeCounterHit")
       }
-      
     }
+  
   }
 </script>
 <style lang="scss" scoped>
   @import '~assets/css/mixin.scss';
+  .icon-close {
+    color:#fff;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
 
+  .icon-close:hover {
+    opacity: .5;
+  }
   .counter {
+    position: relative;
     width: 260px;
     padding: 30px 39px;
     background: #FA6400;
@@ -56,11 +69,12 @@ rightCount:''
 
     .content {
       padding: 0 28px;
+
       >div {
         @include sc(16px, $fc);
         @include fj();
-        line-height:38px;
-        align-items:center;
+        line-height: 38px;
+        align-items: center;
         font-family: PingFangSC-Regular, PingFang SC;
 
       }

@@ -8,7 +8,7 @@
           <input type="text" v-model="rNum" placeholder="Room ID" class="input">
           <div class="enter common" @click="enterRoom">Enter</div>
         </div>
-        <router-link tag="div" class="new-room common" :to="{path:'/createRoom',query:{rNum:rNum}}">Create a new room
+        <router-link tag="div" class="new-room common" :to="{path:'/createRoom'}">Create a new room
         </router-link>
       </div>
       <div class="error" v-else-if="isShow==2">
@@ -31,13 +31,13 @@
       }
     },
     mounted() {
-
+      console.log(process.env)
     },
     methods: {
 
 
       enterRoom() {
-        if (this.rNum) {
+        if (this.rNum!="") {
           this.$http('/showRoomList', {
             rlNumber: this.rNum
           }).then(res => {
@@ -93,6 +93,9 @@
         border-radius: 4px;
         font-family: PingFangSC-Regular, PingFang SC;
       }
+      .common:active{
+        opacity: .6;
+      }
 
       .input-box {
         @include fj();
@@ -100,7 +103,7 @@
         margin-top: 173px;
 
         .input {
-          @include wh(260px, 46px);
+          @include wh(260px, 50px);
           @include sc(24px, #97999A) text-indent: 1rem;
           outline: none;
           background: $fc;

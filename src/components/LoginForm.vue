@@ -3,34 +3,36 @@
     <div class="title">Please input your name</div>
     <input class="input" v-model="name" type="text" placeholder="Name">
     <input class="input" v-model="email" type="text" placeholder="Email">
+    <div class="tip" :style="{'opacity':right ?0:1}">Please confirm email</div>
     <div class="btns">
-      <div class="cancel btn" @click="handleCancel">Cancel</div>
-      <div class="ok btn" @click="sitDown">OK</div>
+      <div class="cancel btn pointer" @click="handleCancel">Cancel</div>
+      <div class="ok btn pointer" @click="handleSitDown">OK</div>
     </div>
+    <div class="iconfont icon-cuowu icon-close" @click="handleCancel"></div>
   </div>
 </template>
 <script>
   import { isEmail } from "assets/js/utils.js"
 
   export default {
-  
+
     data() {
       return {
         name: '',
-        email: ''
+        email: '',
+        right: true
       }
     },
     methods: {
       handleCancel() {
         this.$emit('handleCancel')
       },
-      sitDown() {
+      handleSitDown() {
         var reg = /^[A-Za-z0-9\u4e00-\u9fa5]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/
-        console.log(reg.test(this.email))
+        this.right = reg.test(this.email);
         if (this.name !== '' && this.email !== '') {
           if (reg.test(this.email)) {
-            
-            this.$emit('sitDown', { name: this.name, emial: this.email })
+            this.$emit('handleSitDown', { name: this.name, emial: this.email })
           }
         }
       },
@@ -41,8 +43,33 @@
 <style lang="scss" scoped>
   @import '~assets/css/mixin.scss';
 
+  .pointer:active {
+    opacity: .5;
+  }
+
+  .pointer {
+    cursor: pointer;
+  }
+
+  .icon-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
+
+  .icon-close:hover {
+    opacity: .5;
+  }
+
+  .tip {
+    color: red;
+    text-align: left;
+    font-size: 12px;
+  }
+
   .login-form {
     @include wh(380px, 260px);
+    position: relative;
     text-align: center;
     background: $fc;
     box-shadow: 0px 0px 8px 0px #B0B0B0;
@@ -71,14 +98,14 @@
     .btns {
 
       @include fj();
-      margin-top: 30px;
+      margin-top: 14px;
 
       .btn {
         @include wh(110px, 40px);
         line-height: 40px;
         border-radius: 4px;
         color: $fc;
-        cursor: pointer;
+
       }
 
       .cancel {
