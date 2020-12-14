@@ -15,7 +15,7 @@ module.exports = {
   devServer: {
     proxy: {
       "/room": {
-        target: "http://47.111.244.224:8080/room",
+        target: "http://8.210.86.180:80/room",
         changeOrigin: true,
         pathRewrite: { '^/room': '' }
       },

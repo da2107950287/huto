@@ -5,7 +5,7 @@
         <div class="left">
           <div class="exit pointer" @click="exit">Exit</div>
           <div class="left-bottom">
-            <div class="exit pointer" style="margin-left: 44px" @click="standup">Standup</div>
+            <!-- <div class="exit pointer" style="margin-left: 44px" @click="standup">Standup</div> -->
             <div class="title">
               <div>Total</div>
               <div>hit counts</div>
@@ -149,7 +149,7 @@
         pictures: [],
         mypicture: {},
         currentfrequency: 0,//当前小节
-        // describeUid: '',
+        describeUid: '',
         number: 1,
         value1: '',
         isRight: '',//是否猜中
@@ -161,51 +161,91 @@
         abnormalExit: false,
         show: false,
         msg: "",
-        ws: null,
-        socketEvents: {
-          open(res) {
+
+      }
+    },
+    watch: {
+      describeUid() {
+        this.describeUid = getStore('describeUid')
+      }
+    },
+    computed: {
+      uid() {
+        return getStore("uid")
+      },
+      hasPlayer() {
+        return this.userinfoList.some((item) => {
+          return item.uid == getStore("uid")
+        })
+      }
+    },
+    beforeRouteEnter(to, from, next) {
+      var entryMode;
+      if (from.name == 'CreateRoom' || from.name == "Login") {
+        entryMode = 2;
+      } else {
+        entryMode = 1;
+      }
+      next(vm => {
+        vm.getEnteryMod(entryMode)
+      })
+    },
+    mounted() {
+      this.showConfig()
+      let uid = createUniqueId(), cip = returnCitySN["cip"];
+      //建立连接
+      setStore("uid", uid);
+      this.ws = new WebSocket(`ws://8.210.86.180:80/webSocket/${this.$route.query.roomId}/${uid}/${cip}/${this.entryMode}`);
+      this.ws.onopen = (e) => {
+        console.log("连接成功")
+      }
+      this.ws.onmessage = (e) => {
+        let res = JSON.parse(e.data);
+        console.log(res)
+        switch (res.method) {
+          case 'open':
             if (res.code == 200) {
               this.state = res.data.state;
               this.levels = res.data.levels;
               this.rlNumber = res.data.rlNumber;
-              this.playNumber = res.data.playNumber;
               this.rlId = res.data.rlId;
+              this.playNumber = res.data.playNumber;
               var arr = res.data.userinfoList;
-              //初始化位置
-              for (let i = 1; i <= this.playNumber; i++) {
+              for (let i = 0; i < this.playNumber; i++) {
                 this.userinfoList.push({})
               }
-              this.getUser(arr);
-            } else if (res.code == 500) {//游戏结束
-              this.show = true;
-              this.msg = res.msg;
+              this.getUser(arr)
+            } else if (res.code == 500) {
               this.$router.push("/login")
             }
-          },
-          sitDown(res) {//坐下
-            if (res.code == 200) {//坐下成功
+            break;
+          case 'sitDown':
+            if (res.code == 200) {
               this.showLogin = false;
               this.userinfoList = []
               for (let i = 0; i < this.playNumber; i++) {
                 this.userinfoList.push({})
               }
               this.getUser(res.data)
-            } else if (res.code == 500) {//坐下失败
-
+              console.log("坐下成功")
+            } else if (res.code == 500) {
+              console.log("坐下失败")
             }
-          },
-          standUp(){
+            break;
+          case 'standUp':
             if (res.code == 200) {
               this.userinfoList.splice(res.data - 1, 1, {})
-              console.log(this.userinfoList)
               setStore("userinfoList", this.userinfoList)
               console.log("站起成功")
             } else if (res.code == 500) {
               console.log("站起失败")
             }
-          },
-          start(res) {//开始游戏
-            this.userinfoList.forEach((item) => {//将用户上一节的选择清除
+            break;
+          case 'start': {
+            //全部坐满，游戏开始
+            console.log("游戏开始")
+            this.currentfrequency++;
+            this.userinfoList.forEach((item) => {
               this.$delete(item, 'correct')
             })
             setStore("userinfoList", this.userinfoList)
@@ -213,43 +253,41 @@
             this.showWait = true;
             this.state = 2;
             var mypicture, pictures = res.data;
-            // this.pictures = [];
             mypicture = pictures.splice(pictures.findIndex(item => this.uid == item.uid), 1)
             this.pictures = [...mypicture, ...shuffle(pictures)]
             setStore('pictures', this.pictures)
             //等待30秒
-            if (this.describeTime != 0) {
-              this.getPraperTime()
-            }
+            this.getPraperTime()
             setTimeout(() => {
               this.showWait = false;
               this.ws.send(JSON.stringify({
                 "method": "beginDescribe",
                 "data": {
-                  "rlId": this.query.roomId,//房间ID
+                  "rlId": this.rlId,//房间ID
                   "uid": getStore("uid"),//用户uid
                   "number": this.number//第几个开始描述
                 }
               }))
             }, this.describeTime * 1000)
-          },
-          beginDescribe() {
+          }
+            break;
+          case 'beginDescribe':
             //获取第几个在描述
             if (res.code == 200) {
               if (!this.abnormalExit) {
-                // this.describeUid = res.data.uid;
+                this.describeUid = res.data.uid;
                 setStore("describeUid", res.data.uid);
                 this.timer()
                 setTimeout(() => {
                   this.number++;
-                  this.websocketsend({
+                  this.ws.send(JSON.stringify({
                     "method": "beginDescribe",
                     "data": {
-                      "rlId": this.query.roomId,//房间ID
+                      "rlId": this.rlId,//房间ID
                       "uid": getStore("uid"),//用户uid
                       "number": this.number//第几个开始描述
                     }
-                  })
+                  }))
                 }, this.speakTime * 1000);
               }
             } else if (res.code == 201) {//最后描述用户
@@ -260,8 +298,8 @@
                 this.number = 1;
               }, this.speakTime * 1000);
             }
-          },
-          submitResults() {
+            break;
+          case 'submitResults':
             if (res.code == 201) {
               this.isRight = res.data.number;
               this.correct = res.data.number;
@@ -277,6 +315,7 @@
               // this.result = res.data;
               // this.abnormalExit = false;
               // this.showResult = true;
+
             } else if (res.code == 204) {
               this.userinfoList = res.data;
               if (getStore("userinfoList")) {
@@ -290,13 +329,15 @@
                   })
                 })
               }
+
               if (this.index !== "" && this.correct !== "" && this.uid != this.describeUid) {
                 this.$set(this.userinfoList[this.index], 'correct', this.correct)
                 setStore('userinfoList', this.userinfoList)
               }
             }
-          },
-          end(){
+            break;
+
+          case 'end':
             if (res.code == 200) {//游戏结束
               this.result = res.data;
               this.showResult = true;
@@ -306,9 +347,10 @@
                 this.abnormalExit = true;
               }
               console.log("游戏结束")
+
             }
-          },
-          deleteUser(){
+            break;
+          case 'deleteUser':
             if (res.code == 200) {
               if (this.userinfoList[res.data - 1].uid == getStore("uid")) {
                 removeStore("uid");
@@ -316,325 +358,21 @@
               this.userinfoList.splice(res.data - 1, 1, {})
               setStore("userinfoList", this.userinfoList)
             }
-          }
-        },
-        events: []
+            break;
+          default:
+            break;
+        }
+
+
       }
-    },
-    watch: {
-      position() {
-        this.position = this.position;
-      },
-    },
-    computed: {
-      uid() {
-        return getStore("uid")
-      },
-      describeUid() {
-        return getStore('describeUid');
-      },
-      hasPlayer() {
-        return this.userinfoList.some((item) => {
-          return item.uid == getStore("uid")
-        })
+      this.ws.onerror = (e) => {
+        console.log("连接错误")
       }
-
-    },
-
-    beforeRouteEnter(to, from, next) {
-      var entryMode;
-      if (from.name == 'CreateRoom' || from.name == "Login") {
-        entryMode = 2;
-      } else {
-        entryMode = 1;
+      this.ws.onclose = (e) => {
+        console.log("连接关闭")
       }
-      next(vm => {
-        vm.getEnteryMod(entryMode)
-      })
-    },
-    // mounted() {
-    //   this.showConfig()
-    //   let uid = createUniqueId();
-    //   this.query = this.$route.query;
-    //   let cip = returnCitySN["cip"];
-    //   //建立连接
-    //   setStore("uid", uid);
-    //   this.ws = new WebSocket(`ws://47.111.244.224:8080/webSocket/${this.query.roomId}/${uid}/${cip}/${this.entryMode}`);
-    //   this.ws.onopen = (e) => {
-    //     console.log("连接成功")
-    //   }
-    //   this.ws.onmessage = (e) => {
-    //     let res = JSON.parse(e.data);
-    //     let that = this;
-    //     console.log(res)
-    //     switch (res.method) {
-    //       case 'open':
-    //         if (res.code == 200) {
-    //           this.state = res.data.state;
-    //           this.levels = res.data.levels;
-    //           this.rlNumber = res.data.rlNumber;
-    //           this.rlId=res.data.rlId;
-    //           var arr = res.data.userinfoList;
-    //           this.playNumber = res.data.playNumber
-    //           for (let i = 0; i < this.playNumber; i++) {
-    //             this.userinfoList.push({})
-    //           }
-    //           this.getUser(arr)
-    //         } else if (res.code == 500) {
-    //           this.show = true;
-    //           this.msg = res.msg;
-    //           this.$router.push("/login")
-    //         }
-    //         break;
-    //       case 'sitDown':
-    //         if (res.code == 200) {
-    //           this.showLogin = false;
-    //           this.userinfoList = []
-    //           for (let i = 0; i < this.playNumber; i++) {
-    //             this.userinfoList.push({})
-    //           }
-    //           this.getUser(res.data)
-    //           // this.show = true;
-    //           // this.msg = res.msg;
-    //           // setTimeout(() => {
-    //           //   this.show = false;
-    //           //   this.msg = ''
-    //           // }, 1 * 1000)
-    //           // console.log("坐下成功")
-    //         } else if (res.code == 500) {
-    //           // this.show = true;
-    //           // this.msg = res.msg;
-    //           // setTimeout(() => {
-    //           //   this.show = false;
-    //           //   this.msg = ''
-    //           // }, 1 * 1000)
-    //           // console.log("坐下失败")
-    //         }
-    //         break;
-    //       case 'standUp':
-    //         if (res.code == 200) {
-    //           this.userinfoList.splice(res.data - 1, 1, {})
-    //           // this.userinfoList[res.data - 1] = {};
-    //           console.log(this.userinfoList)
-    //           setStore("userinfoList", this.userinfoList)
-    //           console.log("站起成功")
-    //         } else if (res.code == 500) {
-    //           console.log("站起失败")
-    //         }
-    //         break;
-    //       case 'start': {
-    //         //全部坐满，游戏开始
-    //         console.log("游戏开始")
-    //         if (!this.showResult) {
-    //           this.currentfrequency++;
-
-    //         }
-    //         this.userinfoList.forEach((item) => {
-    //           this.$delete(item, 'correct')
-    //         })
-    //         setStore("userinfoList", this.userinfoList)
-    //         this.counterHit = [];
-    //         this.showWait = true;
-    //         this.state = 2;
-    //         var pictures = res.data;
-    //         this.pictures = [];
-    //         pictures.forEach((item) => {
-    //           if (item.uid == getStore("uid")) {
-    //             this.mypicture = item;
-    //             setStore('mypicture', this.mypicture)
-    //           } else {
-    //             this.pictures.push(item)
-    //           }
-    //         })
-    //         this.pictures = shuffle(this.pictures)
-    //         if (JSON.stringify(this.mypicture) != '{}') {
-    //           this.pictures.unshift(this.mypicture)
-    //         }
-    //         setStore('pictures', this.pictures)
-    //         //等待30秒
-    //         this.getPraperTime()
-    //         setTimeout(() => {
-    //           this.showWait = false;
-    //           this.ws.send(JSON.stringify({
-    //             "method": "beginDescribe",
-    //             "data": {
-    //               "rlId": this.query.roomId,//房间ID
-    //               "uid": getStore("uid"),//用户uid
-    //               "number": this.number//第几个开始描述
-    //             }
-    //           }))
-    //         }, this.describeTime * 1000)
-    //       }
-    //         break;
-    //       case 'beginDescribe':
-    //         //获取第几个在描述
-    //         if (res.code == 200) {
-    //           if (!this.abnormalExit) {
-    //             this.describeUid = res.data.uid;
-    //             setStore("describeUid", res.data.uid);
-    //             this.timer()
-    //             setTimeout(() => {
-    //               this.number++;
-    //               this.ws.send(JSON.stringify({
-    //                 "method": "beginDescribe",
-    //                 "data": {
-    //                   "rlId": this.query.roomId,//房间ID
-    //                   "uid": getStore("uid"),//用户uid
-    //                   "number": this.number//第几个开始描述
-    //                 }
-    //               }))
-    //             }, this.speakTime * 1000);
-    //           }
-    //         } else if (res.code == 201) {//最后描述用户
-    //           this.describeUid = res.data.uid;
-    //           setStore("describeUid", res.data.uid);
-    //           this.timer()
-    //           setTimeout(() => {
-    //             this.number = 1;
-    //           }, this.speakTime * 1000);
-    //         }
-    //         break;
-    //       case 'submitResults':
-    //         if (res.code == 201) {
-    //           this.isRight = res.data.number;
-    //           this.correct = res.data.number;
-    //           this.index = res.data.positions - 1;
-
-
-    //         } else if (res.code == 202) {
-    //           this.counterHit = res.data;
-    //           this.showCounterHit = true;
-    //           this.rightCount = this.counterHit.filter((item) => {
-    //             return item.state == 1
-    //           })
-    //           console.log("自己描述结束")
-    //         } else if (res.code == 203) {//小节结果
-    //           this.result = res.data;
-    //           this.abnormalExit = false;
-    //           this.showResult = true;
-
-    //         } else if (res.code == 204) {
-    //           this.userinfoList = res.data;
-    //           if (getStore("userinfoList")) {
-    //             getStore("userinfoList").forEach((item) => {
-    //               this.userinfoList.forEach((val) => {
-    //                 if (val.uid == item.uid) {
-    //                   if (item.hasOwnProperty('correct')) {
-    //                     this.$set(val, 'correct', item.correct)
-    //                   }
-    //                 }
-    //               })
-    //             })
-    //           }
-
-    //           if (this.index !== "" && this.correct !== "" && this.uid != this.describeUid) {
-    //             console.log("添加correct属性" + this.index + "----" + this.correct)
-    //             this.$set(this.userinfoList[this.index], 'correct', this.correct)
-    //             setStore('userinfoList', this.userinfoList)
-    //           }
-    //         }
-    //         break;
-
-    //       case 'end':
-    //         if (res.code == 200) {//游戏结束
-    //           this.result = res.data;
-    //           this.showResult = true;
-    //           if (this.currentfrequency == this.frequency) {
-    //             this.abnormalExit = false;
-    //           } else {
-    //             this.abnormalExit = true;
-    //           }
-    //           console.log("游戏结束")
-
-    //         }
-    //         break;
-    //       case 'deleteUser':
-    //         if (res.code == 200) {
-    //           if (this.userinfoList[res.data - 1].uid == getStore("uid")) {
-    //             removeStore("uid");
-    //           }
-    //           this.userinfoList.splice(res.data - 1, 1, {})
-    //           setStore("userinfoList", this.userinfoList)
-    //         }
-    //         break;
-    //       default:
-    //         break;
-    //     }
-
-
-    //   }
-    //   console.log(this.ws.readyState)
-    //   if (this.ws.readyState != this.ws.OPEN) {
-    //     console.log("连接已中断!")
-
-    //     return false;
-    //   }
-    //   this.ws.onerror = (e) => {
-    //     console.log("连接错误")
-    //     console.log(e)
-    //   }
-    //   this.ws.onclose = (e) => {
-    //     console.log(e)
-    //     console.log("连接关闭")
-    //   }
-
-
-    // },
-
-    mounted() {
-      this.initWebSocket();
-      const events = this.socketEvents
-      if (events) {
-        Object.keys(events).forEach(k => {
-          this.on(k, events[k].bind(this))
-        })
-      }
-
     },
     methods: {
-      event(name, data) {
-        let eventsArray = this.events[name]
-        eventsArray && eventsArray.forEach(fn => {
-          fn(data);
-        })
-      },
-      on(name, fn) {
-        if (typeof fn === 'function') {
-          if (!this.events[name]) this.events[name] = []
-          this.events[name].push(fn)
-        }
-      },
-      initWebSocket() {//初始化websoket
-        let uid = createUniqueId(),
-          cip = returnCitySN["cip"],
-          wsUrl = `ws://47.111.244.224:8080/webSocket/${this.$route.query.roomId}/${uid}/${cip}/${this.entryMode}`
-        setStore("uid", uid);
-        this.ws = new WebSocket(wsUrl);
-        this.ws.onopen = this.websocketonopen;
-        this.ws.onerror = this.websocketonerror;
-        this.ws.onmessage = this.websocketonmessage;
-        this.ws.onclose = this.websocketclose;
-      },
-      websocketonopen() {//连接成功
-        console.log("WebSocket连接成功");
-      },
-      websocketonerror(e) { //连接失败
-        console.log("WebSocket连接发生错误");
-      },
-      websocketonmessage(e) { //数据接收 
-        const res = JSON.parse(e.data);
-        // 接收数据
-        console.log(res)
-        this.event(res.method, res);
-      },
-
-      websocketsend(data) {//数据发送 
-        this.ws.send(JSON.stringify(data));
-      },
-
-      websocketclose(e) { //关闭连接
-        console.log("connection closed (" + e.code + ")");
-      },
       getEnteryMod(entryMode) {
         this.entryMode = entryMode
       },
@@ -655,108 +393,111 @@
         }
       },
       standup() {
-        this.websocketsend({
+        this.ws.send(JSON.stringify({
           "method": "standUp",
           "data": {
-            "rlId": this.query.roomId,//房间ID
+            "rlId": this.rlId,//房间ID
             "uid": getStore("uid"),//用户uid
             "positions": this.positions//位置
           }
-        })
+        }))
 
       },
       handleLogin(index) {
         //显示登录框
-        if (this.state != 2) {
-          this.positions = index;
-          this.showLogin = true;
-        }
-      },
-      //坐下
-      handleSitDown(params) {
-        this.ws.send({
-          "method": 'sitDown',
-          "data": {
-            "rlId": this.rlId,//房间ID
-            "uid": getStore("uid"),//用户uid
-            "positions": this.positions,//位置
-            "nickname": params.name,//名称
-            "mailbox": params.emial,//邮箱
-          }
-        })
-      },
-      showConfig() {
-        this.$http('/showConfig').then(res => {
-          if (res.code == 200) {
-            this.frequency = res.data.frequency;
-            this.playDescribe = res.data.playDescribe;
-            this.describeTime = res.data.describeTime;
-            this.speakTime = res.data.speakTime;
-          }
-        })
-      },
-      getPraperTime() {
-        let time = this.describeTime;
-        this.prepareTime = parseInt((time / 60)).toString().padStart(2, 0) + ":" + (time % 60).toString().padStart(2, 0);
-        let timer = window.setInterval(() => {
-          time--;
-          this.prepareTime = parseInt((time / 60)).toString().padStart(2, 0) + ":" + (time % 60).toString().padStart(2, 0);
-          if (this.abnormalExit) {
-            window.clearInterval(timer)
-            console.log("异常结束")
-
-          }
-          if (time <= 0) {
-            this.prepareTime = "";
-            window.clearInterval(timer)
-          }
-        }, 1000);
-
-      },
-      //倒计时1分钟
-      timer() {
-        let time = this.speakTime;
-        this.totalTime = parseInt((time / 60)).toString().padStart(2, 0) + ":" + (time % 60).toString().padStart(2, 0);
-        let timer = window.setInterval(() => {
-          time--;
-          this.totalTime = parseInt((time / 60)).toString().padStart(2, 0) + ":" + (time % 60).toString().padStart(2, 0);
-          if (this.abnormalExit) {
-            window.clearInterval(timer)
-            console.log("异常结束")
-          }
-          if (time <= 0) {
-            this.totalTime = "";
-            if (getStore("uid") && getStore("uid") != getStore("describeUid") && this.hasPlayer) {
-              console.log("提交结果")
-              this.ws.send(JSON.stringify({
-                "method": "submitResults",
-                "data": {
-                  "rlId": this.query.roomId,//房间ID
-                  "uid": getStore("uid"),//用户uid
-                  "frequency": this.currentfrequency,//当前小节
-                  "results": this.value1,//图片id
-                  "describeUid": getStore("describeUid")//描述人uid
-                }
-              }))
-              this.value1 = ""
-            }
-
-            window.clearInterval(timer)
-          }
-        }, 1000);
+        if (this.state != 2 && !this.hasPlayer){
+        this.positions = index;
+        this.showLogin = true
       }
+
     },
-    components: {
-      Result,
+    //坐下
+    handleSitDown(params) {
+      this.ws.send(JSON.stringify({
+        "method": 'sitDown',
+        "data": {
+          "rlId": this.rlId,//房间ID
+          "uid": getStore("uid"),//用户uid
+          "positions": this.positions,//位置
+          "nickname": params.name,//名称
+          "mailbox": params.emial,//邮箱
+        }
+      })
+      )
+    },
+    showConfig() {
+      this.$http('/showConfig').then(res => {
+        if (res.code == 200) {
+          this.frequency = res.data.frequency;
+          this.playDescribe = res.data.playDescribe;
+          this.describeTime = res.data.describeTime;
+          this.speakTime = res.data.speakTime;
+        }
+      })
+    },
+    getPraperTime() {
+      let time = this.describeTime;
+      this.prepareTime = parseInt((time / 60)).toString().padStart(2, 0) + ":" + (time % 60).toString().padStart(2, 0);
+      let timer = window.setInterval(() => {
+        time--;
+        this.prepareTime = parseInt((time / 60)).toString().padStart(2, 0) + ":" + (time % 60).toString().padStart(2, 0);
+        if (this.abnormalExit) {
+          window.clearInterval(timer)
+          console.log("异常结束")
+
+        }
+        if (time <= 0) {
+          this.prepareTime = "";
+          window.clearInterval(timer)
+        }
+      }, 1000);
+
+    },
+    //倒计时1分钟
+    timer() {
+      let time = this.speakTime;
+      this.totalTime = parseInt((time / 60)).toString().padStart(2, 0) + ":" + (time % 60).toString().padStart(2, 0);
+      let timer = window.setInterval(() => {
+        time--;
+        this.totalTime = parseInt((time / 60)).toString().padStart(2, 0) + ":" + (time % 60).toString().padStart(2, 0);
+        if (this.abnormalExit) {
+          window.clearInterval(timer)
+          console.log("异常结束")
+        }
+        if (time <= 0) {
+          this.totalTime = "";
+          if (getStore("uid") && getStore("uid") != getStore("describeUid") && this.hasPlayer) {
+            console.log("提交结果")
+            this.ws.send(JSON.stringify({
+              "method": "submitResults",
+              "data": {
+                "rlId": this.rlId,//房间ID
+                "uid": getStore("uid"),//用户uid
+                "frequency": this.currentfrequency,//当前小节
+                "results": this.value1,//图片id
+                "describeUid": getStore("describeUid")//描述人uid
+              }
+            }))
+            this.value1 = ""
+          }
+
+          window.clearInterval(timer)
+        }
+      }, 1000);
+    }
+  },
+  components: {
+    Result,
       Share,
       LoginForm,
       CounterHit,
       Explain,
       Card
-    },
-    beforeDestory() {
-      this.exit()
-    }
+  },
+  beforeDestory() {
+    this.exit();
+    this.ws.close();
+  }
 
   }
 </script>

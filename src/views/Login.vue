@@ -24,18 +24,12 @@
     data() {
       return {
         isShow: 1,
-        rNum: '',//房间号
+        rNum:"",//房间号
         roomId: '',//房间ID
         message: '',//错误提示消息
-        level:'',//游戏等级
       }
     },
-    mounted() {
-      console.log(process.env)
-    },
     methods: {
-
-
       enterRoom() {
         if (this.rNum!="") {
           this.$http('/showRoomList', {
@@ -43,10 +37,7 @@
           }).then(res => {
             if (res.code == 200) {
               this.roomId = res.data.rlId;
-              this.rNum=res.data.rlNumber;
-              this.level=res.data.levels;
-              console.log(999)
-              this.$router.push({ path: '/index', query: { roomId: this.roomId,rNum: this.rNum,level:this.level} })
+              this.$router.push({ path: '/index', query: { roomId: this.roomId} })
             } else if (res.code == 500) {
               this.message = res.msg;
               this.isShow = 2;

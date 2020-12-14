@@ -59,7 +59,7 @@
           playNumber: this.number,
         }).then(res => {
           if (res.code == 200) {
-            this.$router.push({ path: '/index', query: { roomId: res.data.rlId, rNum: res.data.rlNumber, level: res.data.levels } })
+            this.$router.push({ path: '/index', query: { roomId: res.data.rlId} })
           } else if (res.code == 500) {
             this.isShow = 2;
             this.message = res.msg;
